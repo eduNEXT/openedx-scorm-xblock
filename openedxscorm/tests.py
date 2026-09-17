@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
+import subprocess
+import sys
 import unittest
 
 
@@ -567,3 +569,24 @@ class ScormXBlockTrackingTests(unittest.TestCase):
 
         self.assertEqual(self.published_events(block), [])
         self.assertEqual(block.session_started_at, 0)
+
+
+class SettingsImportTests(unittest.TestCase):
+    """
+    Operators import `openedxscorm.tracking` from their Django settings to declare
+    the tracking events of this XBlock to event-routing-backends. That happens
+    before the app registry is ready, so it must not drag in the XBlock, which
+    imports the models of the platform.
+    """
+
+    def test_tracking_can_be_imported_without_the_xblock(self):
+        # A subprocess, because both modules are already imported in this one.
+        subprocess.check_call(
+            [
+                sys.executable,
+                "-c",
+                "import sys; import openedxscorm.tracking;"
+                " assert 'openedxscorm.scormxblock' not in sys.modules,"
+                " 'importing openedxscorm.tracking imported the XBlock'",
+            ]
+        )
